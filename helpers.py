@@ -12,6 +12,7 @@ from webdriver_manager.firefox import GeckoDriverManager
 
 BRAND_DIR = True  # Если True, то сохраняет файлы в папку с название бренда
 MODEL_YEAR = '2022'  # Для добавления к названиям файлов
+
 BRAND = Literal['stinger', 'tt']
 
 urllib3.disable_warnings(category=urllib3.exceptions.InsecureRequestWarning)

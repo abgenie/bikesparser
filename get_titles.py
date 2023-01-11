@@ -109,21 +109,3 @@ def get_tt_titles_from_file() -> None:
     finally:
         names.sort()
         save_list_in_file(names, 'bikes_names_tt.txt')
-
-
-# Forward
-
-# def get_forward_titles() -> None:
-#     """
-#     Функция получает названия велосипедов с сайта https://forwardvelo.ru
-#     """
-#     soup = make_coup('https://forwardvelo.ru')
-#     names = []
-#     while True:
-#         names_on_page = soup.find_all('a', 'product__item-name')
-#         for name in names_on_page:
-#             names.append(name.text)
-       
-#        next_button = soup.find('span', 'current-page').next_sibling
-#        if next_button[]
-
