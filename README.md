@@ -33,13 +33,13 @@ pip install -r requirements.txt
 ## Результат работы
 
 - Файл json со следующим содержанием:
-    - url: str
-    - brand: str
-    - model_year: str
-    - title: str
-    - description: str
-    - specification: dict
-    - images: list
+ - url: str
+ - brand: str
+ - model_year: str
+ - title: str
+ - description: str
+ - specification: dict
+ - images: list
 - Изображения велосипеда
 
 ## Варианты работы
