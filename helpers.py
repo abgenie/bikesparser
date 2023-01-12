@@ -9,9 +9,11 @@ from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.common.by import By
 from webdriver_manager.firefox import GeckoDriverManager
 
+from urllib.request import urlopen
+from PIL import Image
 
-BRAND_DIR = True  # Если True, то сохраняет файлы в папку с название бренда
-MODEL_YEAR = '2022'  # Для добавления к названиям файлов
+from settings.settings import *
+
 
 BRAND = Literal['stinger', 'tt']
 
@@ -78,6 +80,33 @@ def make_desc_dict(url: str, brand: str, title: str, description: str, specifica
 
 # Функции для сохранения данных
 
+def resize_and_save_image(image_url: str, filename: str) -> None:
+    """
+    Функция меняет разрешение изображения и сохраняет его
+    """
+    image = Image.open(urlopen(image_url))
+
+    # Если формат PNG, то убираем прозрачность и помещаем на белый фон
+    if image.format == 'PNG':
+        new_image = Image.new('RGBA', image.size, (255, 255, 255, 255))
+        image = Image.alpha_composite(new_image, image.convert('RGBA'))
+
+    # Находим коэффициент ресайза, и подбираем новый размер без изменения пропорций
+    ratio_w = IMAGE_SIZE[0] / image.width
+    ratio_h = IMAGE_SIZE[1] / image.height
+    if ratio_w < ratio_h:
+        size = (int(image.width * ratio_w), int(image.height * ratio_w))
+    else:
+        size = (int(image.width * ratio_h), int(image.height * ratio_h))
+
+    # Создаём белый фон нужного размера и по центру помещаем скачанное изображение
+    new_image = Image.new('RGB', IMAGE_SIZE, (255, 255, 255))
+    offset = ((IMAGE_SIZE[0] - size[0]) // 2, (IMAGE_SIZE[1] - size[1]) // 2)
+    new_image.paste(image.resize(size), offset)
+
+    new_image.save(filename, 'JPEG')
+
+
 def download_images(describe_dict: dict) -> None:
     """
     Функция получает словарь и скачивает изображения
@@ -92,11 +121,20 @@ def download_images(describe_dict: dict) -> None:
     else:
         filename_prefix = f'output/{brand}_{title}_{MODEL_YEAR}_'
     
-    for i, image in enumerate(describe_dict['images'], 1):
-        filename = filename_prefix + str(i) + '.jpg'
-        with open(filename, 'wb') as f:
-            f.write(requests.get(image, verify=False).content)
-        print('Загружено изображение:', filename)
+    for i, image_url in enumerate(describe_dict['images'], 1):
+        extention = image_url.split('.')[-1]
+        if extention == 'png' and not RESIZE_IMAGES:
+            filename = filename_prefix + str(i) + '.png'
+        else:
+            filename = filename_prefix + str(i) + '.jpg'
+        
+        if RESIZE_IMAGES:
+            resize_and_save_image(image_url, filename)
+            print('Загружено изображение:', IMAGE_SIZE, filename)
+        else:
+            with open(filename, 'wb') as f:
+                f.write(requests.get(image_url, verify=False).content)
+            print('Загружено изображение:', filename)
 
 
 def save_json_file(describe_dict: dict) -> None:
