@@ -297,9 +297,11 @@ if __name__ == '__main__':
         elif 'https://stingerbike.ru' in url:
             describe_dict = stinger_parse(url)
         else:
-            print('[Ошибка] Не подходящая ссылка!')
+            print('[Ошибка] Не подходящая ссылка:', url)
         
         save_json_file(describe_dict)
+        if SAVE_TABLE_VIEW:
+            save_table_view(describe_dict)
         download_images(describe_dict)
 
     import sys

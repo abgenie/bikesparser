@@ -9,7 +9,6 @@ from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.common.by import By
 from webdriver_manager.firefox import GeckoDriverManager
 
-from urllib.request import urlopen
 from PIL import Image
 
 from settings.settings import *
@@ -84,7 +83,8 @@ def resize_and_save_image(image_url: str, filename: str) -> None:
     """
     Функция меняет разрешение изображения и сохраняет его
     """
-    image = Image.open(urlopen(image_url))
+
+    image = Image.open(requests.get(image_url, stream=True, verify=False).raw)
 
     # Если формат PNG, то убираем прозрачность и помещаем на белый фон
     if image.format == 'PNG':
@@ -153,4 +153,35 @@ def save_json_file(describe_dict: dict) -> None:
 
     with open(filename, 'w') as f:
         json.dump(describe_dict, f, ensure_ascii=False, indent=4)
+        print('Создан файл:', filename)
+
+
+def save_table_view(describe_dict: dict) -> None:
+    """
+    Функция сохраняет файл TXT с описанием и спецификациями, оформленными в теги <tr> и <td>
+    """
+    result = ''
+    if describe_dict['description']:
+        result += describe_dict['description'] + '\n\n'
+    
+    for key, value in describe_dict['specification'].items():
+        if isinstance(value, dict):
+            result += f'<tr><th colspan="2">{key}</th></tr>\n'
+            for sub_key, sub_value in value.items():
+                result += f'<tr><td>{sub_key}</td><td>{sub_value}</td></tr>\n'
+        else:
+            result += f'<tr><td>{key}</td><td>{value}</td></tr>\n'
+    
+    title = describe_dict['title'].replace(' ', '_').lower()
+    brand = describe_dict['brand'].replace(' ', '_').lower()
+    
+    if BRAND_DIR:
+        if not os.path.exists(f'output/{brand}'):
+            os.makedirs(f'output/{brand}')
+        filename = f'output/{brand}/{title}_{MODEL_YEAR}.txt'
+    else:
+        filename = f'output/{brand}_{title}_{MODEL_YEAR}.txt'
+
+    with open(filename, 'w') as f:
+        f.write(result)
         print('Создан файл:', filename)
