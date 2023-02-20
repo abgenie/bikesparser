@@ -180,7 +180,7 @@ def stels_rf_parse(url: str) -> dict:
     soup = make_soup(url)
 
     # Получаем название модели
-    title = soup.h1.span.text.strip()
+    title = soup.h1.span.text.strip().replace('"', '')
     import re
     title = re.sub('\s\(.+\)$', '', title)
 

@@ -151,9 +151,9 @@ def save_json_file(describe_dict: dict) -> None:
     else:
         filename = f'output/{brand}_{title}_{MODEL_YEAR}.json'
 
-    with open(filename, 'w') as f:
+    with open(filename, 'w', encoding='utf8') as f:
         json.dump(describe_dict, f, ensure_ascii=False, indent=4)
-        print('Создан файл:', filename)
+        print('\nСоздан файл:', filename)
 
 
 def save_table_view(describe_dict: dict) -> None:
@@ -182,6 +182,6 @@ def save_table_view(describe_dict: dict) -> None:
     else:
         filename = f'output/{brand}_{title}_{MODEL_YEAR}.txt'
 
-    with open(filename, 'w') as f:
+    with open(filename, 'w', encoding='utf8') as f:
         f.write(result)
         print('Создан файл:', filename)

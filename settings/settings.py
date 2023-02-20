@@ -5,7 +5,7 @@ MODEL_YEAR = '2022'
 BRAND_DIR = True
 
 # True - дополнительно сохраняет файл TXT со спецификациями, оформленными в теги <tr> и <td>
-SAVE_TABLE_VIEW = False
+SAVE_TABLE_VIEW = True
 
 # True - при скачивании изображений меняет разрешение 
 RESIZE_IMAGES = True
