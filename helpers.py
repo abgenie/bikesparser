@@ -1,4 +1,4 @@
-import requests, json, os
+import requests, json, os, io
 import urllib3
 from typing import Literal
 from bs4 import BeautifulSoup
@@ -18,9 +18,8 @@ BRAND = Literal['stinger', 'tt']
 
 urllib3.disable_warnings(category=urllib3.exceptions.InsecureRequestWarning)
 
-# Вспомогательные функции
 
-def _get_page_with_selenium(url: str) -> str:
+def _get_page_with_selenium(link_for_bike: str) -> str:
 
     # Для установки драйвера раскоментировать и 
     # добавить параметр'service=service' в webdriver.Firefox()    
@@ -29,7 +28,7 @@ def _get_page_with_selenium(url: str) -> str:
     options.headless = True
     driver = webdriver.Firefox(options=options)
     driver.implicitly_wait(10)
-    driver.get(url)
+    driver.get(link_for_bike)
 
     page_html = driver.page_source
 
@@ -38,21 +37,18 @@ def _get_page_with_selenium(url: str) -> str:
     return page_html
 
 
-def make_soup(url: str, selenium=False) -> BeautifulSoup:
-    """
-    Функция принимает ссылку на страницу и создаёт объект BeautifulSoup
-    """
+def make_soup(link_for_bike: str, selenium=False) -> BeautifulSoup:
+    """Получает ссылку на страницу и создаёт объект BeautifulSoup"""
     if selenium:
-        req = _get_page_with_selenium(url)
+        req = _get_page_with_selenium(link_for_bike)
     else:
-        req = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}, verify=False).text
+        req = requests.get(link_for_bike, headers={'User-Agent': 'Mozilla/5.0'}, verify=False).text
     return BeautifulSoup(req, 'lxml')
 
 
 def clean_title(title: str, brand: BRAND) -> str:
-    """
-    Функция убирает лишние слова из названия велосипеда
-    """
+    """Убирает лишние слова из названия велосипеда"""
+
     with open(f'settings/bikes_names_{brand}.txt', 'r') as f:
         words = f.readlines()
 
@@ -62,12 +58,11 @@ def clean_title(title: str, brand: BRAND) -> str:
     return title
 
 
-def make_desc_dict(url: str, brand: str, title: str, description: str, specification: dict, images: list) -> dict:
-    """
-    Функция принимает параметры, создает и возвращает словарь
-    """
+def make_desc_dict(link_for_bike: str, brand: str, title: str, description: str, specification: dict, images: list) -> dict:
+    """Получает параметры, создает и возвращает словарь"""
+
     return {
-        'url': url,
+        'link_for_bike': link_for_bike,
         'brand': brand,
         'model_year': MODEL_YEAR,
         'title': title,
@@ -84,7 +79,8 @@ def resize_and_save_image(image_url: str, filename: str) -> None:
     Функция меняет разрешение изображения и сохраняет его
     """
 
-    image = Image.open(requests.get(image_url, stream=True, verify=False).raw)
+    r = requests.get(image_url, stream=True, verify=False)
+    image = Image.open(io.BytesIO(r.content))
 
     # Если формат PNG, то убираем прозрачность и помещаем на белый фон
     if image.format == 'PNG':

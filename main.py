@@ -2,12 +2,47 @@ from urllib.parse import urljoin
 from helpers import *
 
 
-def merida_parse(url: str) -> dict:
+def velosklad_parse(link_for_bike: str) -> dict:
+    """
+    Функция парсит сайт https://www.velosklad.ru
+    """
+
+    soup = make_soup(link_for_bike)
+
+    # Получаем название модели и бренд
+    title = soup.h1.text[10:-7]
+    brand = title.split()[0]
+
+    # Получаем описание, если есть
+    description = ''
+
+    # Получаем спецификацию
+    specification = {}
+    spec_name = soup.find_all('div', 'ah-card-spec__name')
+    spec_value = soup.find_all('div', 'ah-card-spec__value')
+    for key, value in zip(spec_name, spec_value):
+        if key.text.strip() in ['Скорости', 'Диаметр колес', 'Тип рамы', 'Тип вилки', 'Тип ободов', 'Тип тормозов',
+                                'Ход вилки', 'Педали', 'Цвета выпускаемые', 'Размеры выпускаемые', 'Разработка',
+                                'Производство', 'Максимальный вес велосипедиста']:
+            continue
+        specification[key.text.strip()] = ' '.join(value.contents[0].split())
+
+    # Получаем ссылки на изображения
+    images = []
+
+    a_images = soup.find('div', 'ah-card-slider-thumbs__wrapper swiper-wrapper').find_all('a', 'prevFoto')
+    for a_image in a_images:
+        images.append(a_image['href'])
+
+    return make_desc_dict(link_for_bike, brand, title, description, specification, images)
+
+
+def merida_parse(link_for_bike: str) -> dict:
     """
     Функция парсит сайт https://www.merida-bikes.com
     """
     
-    soup = make_soup(url)
+    soup = make_soup(link_for_bike)
     
     # Получаем название модели
     title = soup.h1.text.strip().title()
@@ -27,27 +62,24 @@ def merida_parse(url: str) -> dict:
         specification[key.text] = value.text
 
     # Получаем ссылки на изображения
-    images = []
-    
-    # Вначале основное изображение
-    images.append(soup.find('img', 'bike-variant-header-image')['src'])
-    
+    images = [soup.find('img', 'bike-variant-header-image')['src']]
+
     # Затем изображения других цветов
     other_images = soup.find_all('a', 'product-variant-color-item')
     for image in other_images:
-        new_url = urljoin(url, image['href'])
+        new_url = urljoin(link_for_bike, image['href'])
         new_soup = make_soup(new_url)
         images.append(new_soup.find('img', 'bike-variant-header-image')['src'])
 
-    return make_desc_dict(url, 'Merida', title, description, specification, images)
+    return make_desc_dict(link_for_bike, 'Merida', title, description, specification, images)
 
 
-def giant_parse(url: str) -> dict:
+def giant_parse(link_for_bike: str) -> dict:
     """
     Функция парсит сайт https://www.giant-bicycles.com
     """
     
-    soup = make_soup(url, selenium=True)
+    soup = make_soup(link_for_bike, selenium=True)
 
     # Получаем название модели
     title = soup.h1.text
@@ -68,15 +100,15 @@ def giant_parse(url: str) -> dict:
     for li in tags_li:
         images.append(li.img['src'].replace('h_60,q_90,w_60', 'h_850,q_90'))
 
-    return make_desc_dict(url, 'Giant', title, description, specification, images)
+    return make_desc_dict(link_for_bike, 'Giant', title, description, specification, images)
 
 
-def techteam_parse(url: str) -> dict:
+def techteam_parse(link_for_bike: str) -> dict:
     """
     Функция парсит сайт https://www.techteam.ru
     """
-    
-    soup = make_soup(url)
+
+    soup = make_soup(link_for_bike)
 
     # Получаем название модели
     title = soup.h1.text
@@ -84,37 +116,40 @@ def techteam_parse(url: str) -> dict:
 
     # Получаем описание, если есть
     description = ''
-    div_desc = soup.find('div', 'prodInfo_content')
+    div_desc = soup.find('div', 'product-description__content rte')
     if div_desc:
         for p in div_desc:
             description += p.text
+    description = description.strip()
 
     # Получаем спецификацию
     specification = {}
-    categories = soup.find_all('div', 'mainProps_catName')
-    for category in categories:
+    sub_titles_specs = soup.find('div', 'rte chars-description').find_all('h4')
+    for title_spec in sub_titles_specs:
+        category = title_spec.text
+
         category_dict = {}
-        for tr in category.next_sibling.find_all('tr'):
-            key = tr.find('div', 'mainProps_cap_title').text
-            value = tr.td.next_sibling.next_sibling.text
+        for li in title_spec.next_sibling.find_all('li'):
+            key = li.strong.text
+            value = li.contents[1][3:]
             category_dict[key] = value
-        specification[category.text] = category_dict
+        specification[category] = category_dict
 
     # Получаем ссылки на изображения
     images = []
-    div_images = soup.find_all('div', 'productSlider_item')
-    for div in div_images:
-        images.append(div.img['src'])
+    a_images = soup.find_all('a', 'swiper-slide-content')
+    for a in a_images:
+        images.append(a.img['src'])
 
-    return make_desc_dict(url, 'Tech Team', title, description, specification, images)
+    return make_desc_dict(link_for_bike, 'Tech Team', title, description, specification, images)
 
 
-def forward_parse(url: str) -> dict:
+def forward_parse(link_for_bike: str) -> dict:
     """
     Функция парсит сайт https://forwardvelo.ru
     """
     
-    soup = make_soup(url)
+    soup = make_soup(link_for_bike)
     
     # Получаем название модели
     title = soup.h1.text.replace(',', '.')[:-7].title()
@@ -139,17 +174,17 @@ def forward_parse(url: str) -> dict:
     images = []
     images_links = soup.find_all('img', 'velo-detail-slider-main__item')
     for image in images_links:
-        images.append(urljoin(url, image['src']))
+        images.append(urljoin(link_for_bike, image['src']))
     
-    return make_desc_dict(url, 'Forward', title, description, specification, images)
+    return make_desc_dict(link_for_bike, 'Forward', title, description, specification, images)
 
 
-def stels_parse(url: str) -> dict:
+def stels_parse(link_for_bike: str) -> dict:
     """
     Функция парсит сайт https://stelsbicycle.ru/
     """
     
-    soup = make_soup(url)
+    soup = make_soup(link_for_bike)
 
     # Получаем название модели
     title = soup.h2.text.replace('"', '')
@@ -167,17 +202,17 @@ def stels_parse(url: str) -> dict:
     images = []
     links_images = soup.find_all('a', 'zoom')
     for link in links_images:
-        images.append(urljoin(url, link['href']))
+        images.append(urljoin(link_for_bike, link['href']))
     
-    return make_desc_dict(url, 'Stels', title, description, specification, images)
+    return make_desc_dict(link_for_bike, 'Stels', title, description, specification, images)
 
 
-def stels_rf_parse(url: str) -> dict:
+def stels_rf_parse(link_for_bike: str) -> dict:
     """
     Функция парсит сайт https://stels-rf.ru
     """
     
-    soup = make_soup(url)
+    soup = make_soup(link_for_bike)
 
     # Получаем название модели
     title = soup.h1.span.text.strip().replace('"', '')
@@ -203,15 +238,15 @@ def stels_rf_parse(url: str) -> dict:
             images.append(image['href'])
 
 
-    return make_desc_dict(url, 'Stels', title, description, specification, images)
+    return make_desc_dict(link_for_bike, 'Stels', title, description, specification, images)
 
 
-def desna_parse(url: str) -> dict:
+def desna_parse(link_for_bike: str) -> dict:
     """
     Функция парсит сайт https://desnarussia.ru
     """
     
-    soup = make_soup(url)
+    soup = make_soup(link_for_bike)
 
     # Получаем название модели
     title = soup.h1.text.replace('"', '')
@@ -241,17 +276,17 @@ def desna_parse(url: str) -> dict:
     images = []
     links_images = soup.find_all('a', 'cloud-zoom')
     for link in links_images:
-        images.append(urljoin(url, link['href']))
+        images.append(urljoin(link_for_bike, link['href']))
     
-    return make_desc_dict(url, 'Desna', title, description, specification, images)
+    return make_desc_dict(link_for_bike, 'Desna', title, description, specification, images)
 
 
-def stinger_parse(url: str) -> dict:
+def stinger_parse(link_for_bike: str) -> dict:
     """
     Функция парсит сайт https://stingerbike.ru
     """
     
-    soup = make_soup(url, selenium=True)
+    soup = make_soup(link_for_bike, selenium=True)
 
     # Получаем название модели
     title = soup.title.text
@@ -269,35 +304,36 @@ def stinger_parse(url: str) -> dict:
     # Получаем ссылки на изображения
     images = []
     link = soup.find('a', 'fancybox')['href']
-    images.append(urljoin(url, link))
+    images.append(urljoin(link_for_bike, link))
 
-    return make_desc_dict(url, 'Stinger', title, description, specification, images)
+    return make_desc_dict(link_for_bike, 'Stinger', title, description, specification, images)
 
 
 if __name__ == '__main__':
 
-    def parse_and_save_files(url: str) -> None:
-        """
-        Функция вызывает подходящюю функцию парсинга и функции сохранения файлов
-        """
-        if 'https://www.merida-bikes.com' in url:
-            describe_dict = merida_parse(url)
-        elif 'https://www.giant-bicycles.com' in url:
-            describe_dict = giant_parse(url)
-        elif 'https://www.techteam.ru' in url:
-            describe_dict = techteam_parse(url)
-        elif 'https://forwardvelo.ru' in url:
-            describe_dict = forward_parse(url)
-        elif 'https://stelsbicycle.ru/' in url:
-            describe_dict = stels_parse(url)
-        elif 'https://stels-rf.ru' in url:
-            describe_dict = stels_rf_parse(url)
-        elif 'https://desnarussia.ru' in url:
-            describe_dict = desna_parse(url)
-        elif 'https://stingerbike.ru' in url:
-            describe_dict = stinger_parse(url)
+    def parse_and_save_files(link_for_bike: str) -> None:
+        """Функция вызывает подходящую функцию парсинга и функции сохранения файлов"""
+        
+        if 'https://www.merida-bikes.com' in link_for_bike:
+            describe_dict = merida_parse(link_for_bike)
+        elif 'https://www.giant-bicycles.com' in link_for_bike:
+            describe_dict = giant_parse(link_for_bike)
+        elif 'https://www.techteam.ru' in link_for_bike:
+            describe_dict = techteam_parse(link_for_bike)
+        elif 'https://forwardvelo.ru' in link_for_bike:
+            describe_dict = forward_parse(link_for_bike)
+        elif 'https://stelsbicycle.ru/' in link_for_bike:
+            describe_dict = stels_parse(link_for_bike)
+        elif 'https://stels-rf.ru' in link_for_bike:
+            describe_dict = stels_rf_parse(link_for_bike)
+        elif 'https://desnarussia.ru' in link_for_bike:
+            describe_dict = desna_parse(link_for_bike)
+        elif 'https://stingerbike.ru' in link_for_bike:
+            describe_dict = stinger_parse(link_for_bike)
+        elif 'https://www.velosklad.ru' in link_for_bike:
+            describe_dict = velosklad_parse(link_for_bike)
         else:
-            print('[Ошибка] Не подходящая ссылка:', url)
+            print('[Ошибка] Не подходящая ссылка:', link_for_bike)
         
         save_json_file(describe_dict)
         if SAVE_TABLE_VIEW:
@@ -310,17 +346,17 @@ if __name__ == '__main__':
     # программа пройдет по всем ссылкам, спарсит и сохранит данные
     if len(sys.argv) > 1 and os.path.exists(sys.argv[1]):
         with open(sys.argv[1], 'r') as f:
-            urls = f.readlines()
+            links_for_bikes = f.readlines()
         
-        for url in urls:
-            parse_and_save_files(url.strip())
+        for link_for_bike in links_for_bikes:
+            parse_and_save_files(link_for_bike.strip())
     # Если запустить файл без аргументов, программа в цикле предлагает ввести ссылку и парсит данные
     else:
         while True:
             print('Введите ссылку на страницу модели или "q" для выхода')
-            url = input('> ')
+            link_for_bike = input('> ')
 
-            if url == 'q':
+            if link_for_bike == 'q':
                 break
             else:
-                parse_and_save_files(url)
+                parse_and_save_files(link_for_bike)
