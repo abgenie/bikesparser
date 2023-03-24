@@ -345,7 +345,7 @@ if __name__ == '__main__':
     # Если запустить файл с дополнительным аргументом (название файла со ссылками на страницы),
     # программа пройдет по всем ссылкам, спарсит и сохранит данные
     if len(sys.argv) > 1 and os.path.exists(sys.argv[1]):
-        with open(sys.argv[1], 'r') as f:
+        with open(sys.argv[1], 'r', encoding='utf8') as f:
             links_for_bikes = f.readlines()
         
         for link_for_bike in links_for_bikes:

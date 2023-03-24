@@ -49,11 +49,9 @@ def make_soup(link_for_bike: str, selenium=False) -> BeautifulSoup:
 def clean_title(title: str, brand: BRAND) -> str:
     """Убирает лишние слова из названия велосипеда"""
 
-    with open(f'settings/bikes_names_{brand}.txt', 'r') as f:
-        words = f.readlines()
-
-    for word in words:
-        title = title.replace(word.rstrip() + ' ', '')
+    with open(f'settings/bikes_names_{brand}.txt', 'r', encoding='utf8') as f:
+        for word in f:
+            title = title.replace(word.rstrip() + ' ', '')
 
     return title
 
@@ -128,7 +126,7 @@ def download_images(describe_dict: dict) -> None:
             resize_and_save_image(image_url, filename)
             print('Загружено изображение:', IMAGE_SIZE, filename)
         else:
-            with open(filename, 'wb') as f:
+            with open(filename, 'wb', encoding='utf8') as f:
                 f.write(requests.get(image_url, verify=False).content)
             print('Загружено изображение:', filename)
 
