@@ -293,7 +293,11 @@ def stinger_parse(link_for_bike: str) -> dict:
     title = clean_title(title, 'stinger')
 
     # Получаем описание, если есть
-    description = soup.find('div', 'description-text').text.strip()
+    description = soup.find('div', 'description-text')
+    if description:
+        description = description.text.strip()
+    else:
+        description = ''
 
     # Получаем спецификацию
     specification = {}
@@ -334,6 +338,7 @@ if __name__ == '__main__':
             describe_dict = velosklad_parse(link_for_bike)
         else:
             print('[Ошибка] Не подходящая ссылка:', link_for_bike)
+            return
         
         save_json_file(describe_dict)
         if SAVE_TABLE_VIEW:
