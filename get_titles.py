@@ -1,3 +1,4 @@
+from selenium.webdriver.common.by import By
 from helpers import *
 
 
@@ -17,8 +18,11 @@ def get_stinger_titles() -> None:
     Функция получает названия всех велосипедов с сайта https://stingerbike.ru/ и сохраняет в файл
     """
     options = Options()
-    options.headless = True
-    driver = webdriver.Firefox(options=options)
+    options.add_argument('--headless')
+    options.add_argument('--no-sandbox')
+    options.add_argument('--disable-dev-shm-usage')
+    driver = webdriver.Chrome(options=options)
+    
     driver.get('https://stingerbike.ru/catalog/velosipedy/')
     names = []
 
@@ -36,14 +40,15 @@ def get_stinger_titles() -> None:
     driver.quit()
     names.sort()
 
-    save_list_in_file(names, 'bikes_names_stinger.txt')
+    save_list_in_file(names, 'bikes_names_stinger_new.txt')
 
 
 # Tech Team
 
 def get_pages_in_category(url: str) -> list:
     """
-    Функция проходит по всем страницам категории сайта https://www.techteam.ru и возвращает список ссылок на страницы товаров
+    Функция проходит по всем страницам категории сайта https://www.techteam.ru и возвращает 
+    список ссылок на страницы товаров
     """
     soup = make_soup(url)
     pages = []
@@ -62,11 +67,12 @@ def get_pages_in_category(url: str) -> list:
 
 def get_all_pages() -> None:
     """
-    Функция получает ссылки на все велосипеды и самокаты с сайта https://www.techteam.ru и сохраняет в файл
+    Функция получает ссылки на все велосипеды и самокаты с сайта https://www.techteam.ru
+    и сохраняет в файл
     """
     soup = make_soup('https://www.techteam.ru')
-    links_scooters_categories = soup.find('ul', 'catalogMenu_13').find_all('a')
-    links_bikes_categories = soup.find('ul', 'catalogMenu_26').find_all('a')
+    links_scooters_categories = soup.find('li', 'parent parent-13').ul.find_all('a')
+    links_bikes_categories = soup.find('li', 'parent parent-26').ul.find_all('a')
 
     # Получаем ссылки на страницы категорий
     all_categories_urls = []
@@ -79,7 +85,7 @@ def get_all_pages() -> None:
             continue
         all_categories_urls.append(link_bike_category['href'])
     
-    all_categories_urls.append(soup.find('span', string='Беговелы').parent['href'])
+    all_categories_urls.append(soup.find('a', string='Беговелы')['href'])
 
     # Получаем ссылки на страницы товаров
     all_pages = []
@@ -94,7 +100,7 @@ def get_tt_titles_from_file() -> None:
     """
     Функция читает файл со ссылками на страницы, и с каждой страницы сохраняет название велосипеда
     """
-    with open('tt_all_pages.txt', 'r') as f:
+    with open('settings/tt_all_pages.txt', 'r') as f:
         all_pages = f.readlines()
 
     names = []
@@ -108,4 +114,16 @@ def get_tt_titles_from_file() -> None:
         print('Сохранено записей', len(names))
     finally:
         names.sort()
-        save_list_in_file(names, 'bikes_names_tt.txt')
+        save_list_in_file(names, 'bikes_names_tt_new.txt')
+
+
+if __name__ == '__main__':
+    
+    # Получаем файл со списком названий велосипедов Stinger
+    get_stinger_titles()
+
+    # Получаем файл со списком название велосипедов TT
+    get_all_pages()
+    get_tt_titles_from_file()
+    
+

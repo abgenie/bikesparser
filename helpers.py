@@ -4,10 +4,9 @@ from typing import Literal
 from bs4 import BeautifulSoup
 
 from selenium import webdriver
-from selenium.webdriver.firefox.service import Service as FirefoxService
-from selenium.webdriver.firefox.options import Options
-from selenium.webdriver.common.by import By
-from webdriver_manager.firefox import GeckoDriverManager
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+from webdriver_manager.chrome import ChromeDriverManager
 
 from PIL import Image
 
@@ -21,18 +20,17 @@ urllib3.disable_warnings(category=urllib3.exceptions.InsecureRequestWarning)
 
 def _get_page_with_selenium(link_for_bike: str) -> str:
 
-    # Для установки драйвера раскоментировать и 
-    # добавить параметр'service=service' в webdriver.Firefox()    
-    # service=FirefoxService(GeckoDriverManager().install())
     options = Options()
-    options.headless = True
-    driver = webdriver.Firefox(options=options)
-    driver.implicitly_wait(10)
+    options.add_argument('--headless')
+    options.add_argument('--no-sandbox')
+    options.add_argument('--disable-dev-shm-usage')
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+    # driver.implicitly_wait(10)
     driver.get(link_for_bike)
 
     page_html = driver.page_source
 
-    driver.quit()
+    driver.close()
     
     return page_html
 
