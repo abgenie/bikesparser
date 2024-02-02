@@ -124,16 +124,20 @@ def techteam_parse(link_for_bike: str) -> dict:
 
     # Получаем спецификацию
     specification = {}
-    sub_titles_specs = soup.find('div', 'rte chars-description').find_all('h4')
-    for title_spec in sub_titles_specs:
-        category = title_spec.text
+    try:
+        sub_titles_specs = soup.find('div', 'rte chars-description').find_all('h4')
+        for title_spec in sub_titles_specs:
+            category = title_spec.text
 
-        category_dict = {}
-        for li in title_spec.next_sibling.find_all('li'):
-            key = li.strong.text
-            value = li.contents[1][3:]
-            category_dict[key] = value
-        specification[category] = category_dict
+            category_dict = {}
+            for li in title_spec.next_sibling.find_all('li'):
+                key = li.strong.text
+                value = li.contents[1][3:]
+                category_dict[key] = value
+            specification[category] = category_dict
+    except:
+        # На сайте может не быть спецификации
+        pass
 
     # Получаем ссылки на изображения
     images = []
@@ -322,7 +326,7 @@ if __name__ == '__main__':
             describe_dict = merida_parse(link_for_bike)
         elif 'https://www.giant-bicycles.com' in link_for_bike:
             describe_dict = giant_parse(link_for_bike)
-        elif 'https://www.techteam.ru' in link_for_bike:
+        elif 'https://techteam.ru' in link_for_bike:
             describe_dict = techteam_parse(link_for_bike)
         elif 'https://forwardvelo.ru' in link_for_bike:
             describe_dict = forward_parse(link_for_bike)
