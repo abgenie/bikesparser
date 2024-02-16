@@ -112,6 +112,7 @@ def techteam_parse(link_for_bike: str) -> dict:
 
     # Получаем название модели
     title = soup.h1.text
+    title = title.replace('/', '_')
     title = clean_title(title, 'tt')
 
     # Получаем описание, если есть
@@ -123,21 +124,36 @@ def techteam_parse(link_for_bike: str) -> dict:
     description = description.strip()
 
     # Получаем спецификацию
-    specification = {}
-    try:
-        sub_titles_specs = soup.find('div', 'rte chars-description').find_all('h4')
-        for title_spec in sub_titles_specs:
-            category = title_spec.text
 
-            category_dict = {}
-            for li in title_spec.next_sibling.find_all('li'):
-                key = li.strong.text
-                value = li.contents[1][3:]
-                category_dict[key] = value
-            specification[category] = category_dict
-    except:
-        # На сайте может не быть спецификации
-        pass
+    specification = {}
+    # Спецификации могут находится в разделе описание или разделе характеристики
+    if div_desc:
+        try:
+            for li in div_desc.find_all('li'):
+                key, value = li.text.split(':')
+                specification[key.strip()] = value.strip()
+        except:
+            pass
+    elif not specification:
+        try:
+            div_spec = soup.find('div', 'rte chars-description').find_all('li')
+            for li in div_spec:
+                key, value = li.text.split(':')
+                specification[key.strip()] = value.strip()
+
+            # sub_titles_specs = soup.find('div', 'rte chars-description').find_all('h4')
+            # for title_spec in sub_titles_specs:
+            #     category = title_spec.text
+
+            #     category_dict = {}
+            #     for li in title_spec.next_sibling.find_all('li'):
+            #         key = li.strong.text
+            #         value = li.contents[1][3:]
+            #         category_dict[key] = value
+            #     specification[category] = category_dict
+        except:
+            # На сайте может не быть спецификации
+            pass
 
     # Получаем ссылки на изображения
     images = []
