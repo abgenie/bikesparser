@@ -19,17 +19,15 @@ urllib3.disable_warnings(category=urllib3.exceptions.InsecureRequestWarning)
 
 
 def _get_page_with_selenium(link_for_bike: str) -> str:
-
-    options = Options()
-    options.add_argument('--headless')
+    options = webdriver.ChromeOptions()
     options.add_argument('--no-sandbox')
+    options.add_argument('--headless')
     options.add_argument('--disable-dev-shm-usage')
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     # driver.implicitly_wait(10)
     driver.get(link_for_bike)
 
     page_html = driver.page_source
-
     driver.close()
     
     return page_html
@@ -44,6 +42,30 @@ def make_soup(link_for_bike: str, selenium=False) -> BeautifulSoup:
     return BeautifulSoup(req, 'lxml')
 
 
+def make_soup_cube(link_for_bike: str) -> BeautifulSoup:
+    options = webdriver.ChromeOptions()
+    options.add_argument('--no-sandbox')
+    options.add_argument('--headless')
+    options.add_argument('--disable-dev-shm-usage')
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+    driver.get(link_for_bike)
+
+    # driver.find_element_by_class_name('#taba867c7ec857341c198a415fd921efb25_2')
+    btn_component = driver.find_element_by_link_text(' COMPONENTS')
+    btn_component.click()
+
+    page_html = driver.page_source
+    driver.close()
+
+    return BeautifulSoup(page_html, 'lxml')
+
+
+def make_soup_from_file(filename: str) -> BeautifulSoup:
+    with open(f'html/{filename}', 'r', encoding='utf8') as f:
+        req = f.read()
+    return BeautifulSoup(req, 'lxml')
+
+
 def clean_title(title: str, brand: BRAND) -> str:
     """Убирает лишние слова из названия велосипеда"""
 
@@ -54,13 +76,13 @@ def clean_title(title: str, brand: BRAND) -> str:
     return title
 
 
-def make_desc_dict(link_for_bike: str, brand: str, title: str, description: str, specification: dict, images: list) -> dict:
+def make_desc_dict(link_for_bike: str, brand: str, title: str, description: str, specification: dict, images: list, model_year=None) -> dict:
     """Получает параметры, создает и возвращает словарь"""
 
     return {
         'link_for_bike': link_for_bike,
         'brand': brand,
-        'model_year': MODEL_YEAR,
+        'model_year': model_year if model_year else MODEL_YEAR,
         'title': title,
         'description': description,
         'specification': specification,

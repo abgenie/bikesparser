@@ -2,6 +2,41 @@ from urllib.parse import urljoin
 from helpers import *
 
 
+def magrussia_parse(link_for_bike: str) -> dict:
+    """
+    Функция парсит сайт https://www.mag-russia.ru
+    """
+
+    soup = make_soup(link_for_bike)
+
+    # Получаем название модели и бренд
+    title = soup.h1.text[10:]
+    brand = title.split()[0]
+    model_year = title[-5:].replace(')', '')
+    title = title[:-7]
+
+    # Получаем описание, если есть
+    description = ''
+
+    # Получаем спецификацию
+    specification = {}
+    spec_name = soup.find_all('td', itemprop='name')
+    spec_value = soup.find_all('td', itemprop='value')
+    for key, value in zip(spec_name, spec_value):
+        if key.text.strip() in ['Цвет производителя:', 'Год:']:
+            continue
+        specification[key.text.strip()] = ' '.join(value.contents[0].split())
+
+    # Получаем ссылки на изображения
+    images = []
+
+    a_images = soup.find('div', 'product-card__gallery').find_all('a')
+    for a_image in a_images[1:]:
+        images.append('https://www.mag-russia.ru' + a_image['href'])
+
+    return make_desc_dict(link_for_bike, brand, title, description, specification, images, model_year)
+
+
 def velosklad_parse(link_for_bike: str) -> dict:
     """
     Функция парсит сайт https://www.velosklad.ru
@@ -23,7 +58,7 @@ def velosklad_parse(link_for_bike: str) -> dict:
     for key, value in zip(spec_name, spec_value):
         if key.text.strip() in ['Скорости', 'Диаметр колес', 'Тип рамы', 'Тип вилки', 'Тип ободов', 'Тип тормозов',
                                 'Ход вилки', 'Педали', 'Цвета выпускаемые', 'Размеры выпускаемые', 'Разработка',
-                                'Производство', 'Максимальный вес велосипедиста']:
+                                'Производство', 'Максимальный вес велосипедиста', 'Амортизатор']:
             continue
         specification[key.text.strip()] = ' '.join(value.contents[0].split())
 
@@ -199,32 +234,32 @@ def forward_parse(link_for_bike: str) -> dict:
     return make_desc_dict(link_for_bike, 'Forward', title, description, specification, images)
 
 
-def stels_parse(link_for_bike: str) -> dict:
-    """
-    Функция парсит сайт https://stelsbicycle.ru/
-    """
+# def stels_parse(link_for_bike: str) -> dict:
+#     """
+#     Функция парсит сайт https://stelsbicycle.ru/
+#     """
     
-    soup = make_soup(link_for_bike)
+#     soup = make_soup(link_for_bike)
 
-    # Получаем название модели
-    title = soup.h2.text.replace('"', '')
+#     # Получаем название модели
+#     title = soup.h2.text.replace('"', '')
 
-    # Получаем описание, если есть
-    description = ''
+#     # Получаем описание, если есть
+#     description = ''
 
-    # Получаем спецификацию
-    specification = {}
-    div_specs = soup.find_all('div', 'product-card__tr')
-    for div_tr in div_specs:
-        specification[div_tr.div.text] = div_tr.div.next_sibling.next_sibling.text
+#     # Получаем спецификацию
+#     specification = {}
+#     div_specs = soup.find_all('div', 'product-card__tr')
+#     for div_tr in div_specs:
+#         specification[div_tr.div.text] = div_tr.div.next_sibling.next_sibling.text
 
-    # Получаем ссылки на изображения
-    images = []
-    links_images = soup.find_all('a', 'zoom')
-    for link in links_images:
-        images.append(urljoin(link_for_bike, link['href']))
+#     # Получаем ссылки на изображения
+#     images = []
+#     links_images = soup.find_all('a', 'zoom')
+#     for link in links_images:
+#         images.append(urljoin(link_for_bike, link['href']))
     
-    return make_desc_dict(link_for_bike, 'Stels', title, description, specification, images)
+#     return make_desc_dict(link_for_bike, 'Stels', title, description, specification, images)
 
 
 def stels_rf_parse(link_for_bike: str) -> dict:
@@ -237,7 +272,7 @@ def stels_rf_parse(link_for_bike: str) -> dict:
     # Получаем название модели
     title = soup.h1.span.text.strip().replace('"', '')
     import re
-    title = re.sub('\s\(.+\)$', '', title)
+    title = re.sub(r'\s\(.+\)$', '', title)
 
     # Получаем описание, если есть
     description = ''
@@ -340,14 +375,16 @@ if __name__ == '__main__':
         
         if 'https://www.merida-bikes.com' in link_for_bike:
             describe_dict = merida_parse(link_for_bike)
+        elif 'https://www.mag-russia.ru' in link_for_bike:
+            describe_dict = magrussia_parse(link_for_bike)
         elif 'https://www.giant-bicycles.com' in link_for_bike:
             describe_dict = giant_parse(link_for_bike)
         elif 'https://techteam.ru' in link_for_bike:
             describe_dict = techteam_parse(link_for_bike)
         elif 'https://forwardvelo.ru' in link_for_bike:
             describe_dict = forward_parse(link_for_bike)
-        elif 'https://stelsbicycle.ru/' in link_for_bike:
-            describe_dict = stels_parse(link_for_bike)
+        # elif 'https://stelsbicycle.ru/' in link_for_bike:
+        #     describe_dict = stels_parse(link_for_bike)
         elif 'https://stels-rf.ru' in link_for_bike:
             describe_dict = stels_rf_parse(link_for_bike)
         elif 'https://desnarussia.ru' in link_for_bike:
